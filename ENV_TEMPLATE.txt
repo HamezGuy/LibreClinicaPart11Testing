@@ -1,0 +1,41 @@
+# ================================================================
+# LibreClinica Part 11 Testing - Environment Configuration
+# ================================================================
+# Copy this to .env and update values for your deployment
+# This is SEPARATE from the main production environment
+# ================================================================
+
+# ==============================================
+# DATABASE (Separate from production)
+# ==============================================
+DB_PASSWORD=your_test_database_password
+
+# ==============================================
+# DOMAIN CONFIGURATION
+# ==============================================
+# Your Part 11 testing domain (separate from production)
+# Example: part11-test.accuratrials.com
+DOMAIN=part11-test.accuratrials.com
+
+# Frontend domain on Vercel (where test UI is deployed)
+# Example: libreclinica-part11-test.vercel.app
+FRONTEND_DOMAIN=libreclinica-part11-test.vercel.app
+
+# Email for SSL certificate notifications
+ADMIN_EMAIL=admin@accuratrials.com
+
+# ==============================================
+# SECURITY
+# ==============================================
+# JWT Secret (generate a unique one for testing)
+# Command: openssl rand -hex 32
+JWT_SECRET=your_unique_test_jwt_secret_here
+
+# ==============================================
+# LIBRECLINICA SOAP
+# ==============================================
+# MD5 hash of SOAP password
+# Default "12345678" -> MD5: "25d55ad283aa400af464c76d713c07ad"
+SOAP_PASSWORD=25d55ad283aa400af464c76d713c07ad
+SOAP_USERNAME=root
+

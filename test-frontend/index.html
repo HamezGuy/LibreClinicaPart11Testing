@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LibreClinica Part 11 Compliance Testing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#2563eb"/>
+                    <path d="M8 16L14 22L24 10" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>LibreClinica Part 11 Testing</span>
+            </div>
+            <div class="header-actions">
+                <span id="session-timer" class="session-timer hidden">Session: <span id="timer">30:00</span></span>
+                <button id="logout-btn" class="btn btn-secondary hidden" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Connection Status -->
+            <section class="connection-section">
+                <h2>🔌 API Connection</h2>
+                <div class="connection-config">
+                    <label>API Base URL:</label>
+                    <input type="text" id="api-url" value="https://api.accuratrials.com" placeholder="https://your-api.com">
+                    <button class="btn btn-primary" onclick="testConnection()">Test Connection</button>
+                </div>
+                <div id="connection-status" class="status-box">
+                    <span class="status-indicator pending"></span>
+                    <span>Not Connected</span>
+                </div>
+            </section>
+
+            <!-- Login Section (hidden when logged in) -->
+            <section id="login-section" class="test-section">
+                <h2>🔐 Authentication Test</h2>
+                <div class="test-card">
+                    <h3>Login with Credentials</h3>
+                    <form id="login-form" onsubmit="login(event)">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" placeholder="root" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Login</button>
+                    </form>
+                    <div id="login-result" class="result-box hidden"></div>
+                </div>
+            </section>
+
+            <!-- Part 11 Tests (shown when logged in) -->
+            <div id="test-sections" class="hidden">
+                <!-- User Info -->
+                <section class="test-section">
+                    <h2>👤 Current User</h2>
+                    <div id="user-info" class="info-card"></div>
+                </section>
+
+                <!-- Audit Trail Tests -->
+                <section class="test-section">
+                    <h2>📋 Audit Trail Tests (§11.10(e))</h2>
+                    <p class="section-desc">Verify that the system maintains a secure, computer-generated, time-stamped audit trail.</p>
+                    
+                    <div class="test-grid">
+                        <div class="test-card">
+                            <h3>View Audit Logs</h3>
+                            <p>Retrieve recent audit trail entries</p>
+                            <button class="btn btn-primary" onclick="getAuditLogs()">Get Audit Logs</button>
+                            <div id="audit-result" class="result-box hidden"></div>
+                        </div>
+                        
+                        <div class="test-card">
+                            <h3>Generate Audit Entry</h3>
+                            <p>Create a test action to verify audit logging</p>
+                            <input type="text" id="audit-action" placeholder="Test action description">
+                            <button class="btn btn-primary" onclick="createAuditEntry()">Log Action</button>
+                            <div id="audit-create-result" class="result-box hidden"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Electronic Signatures Tests -->
+                <section class="test-section">
+                    <h2>✍️ Electronic Signatures (§11.50, §11.70)</h2>
+                    <p class="section-desc">Verify electronic signature requirements including unique identification.</p>
+                    
+                    <div class="test-grid">
+                        <div class="test-card">
+                            <h3>Sign Data</h3>
+                            <p>Apply electronic signature with reason</p>
+                            <textarea id="sign-data" placeholder="Data to sign...">Patient enrollment confirmed</textarea>
+                            <select id="sign-meaning">
+                                <option value="approval">Approval</option>
+                                <option value="review">Reviewed</option>
+                                <option value="verification">Verification</option>
+                                <option value="authorship">Authorship</option>
+                            </select>
+                            <div class="form-group">
+                                <label>Re-enter Password (for signature)</label>
+                                <input type="password" id="sign-password" placeholder="Confirm password">
+                            </div>
+                            <button class="btn btn-primary" onclick="signData()">Apply Signature</button>
+                            <div id="sign-result" class="result-box hidden"></div>
+                        </div>
+                        
+                        <div class="test-card">
+                            <h3>Verify Signature</h3>
+                            <p>Validate an existing signature</p>
+                            <input type="text" id="signature-id" placeholder="Signature ID">
+                            <button class="btn btn-primary" onclick="verifySignature()">Verify</button>
+                            <div id="verify-result" class="result-box hidden"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Access Control Tests -->
+                <section class="test-section">
+                    <h2>🔒 Access Control (§11.10(d))</h2>
+                    <p class="section-desc">Verify system access is limited to authorized individuals.</p>
+                    
+                    <div class="test-grid">
+                        <div class="test-card">
+                            <h3>List Users</h3>
+                            <p>View all users in the system</p>
+                            <button class="btn btn-primary" onclick="getUsers()">Get Users</button>
+                            <div id="users-result" class="result-box hidden"></div>
+                        </div>
+                        
+                        <div class="test-card">
+                            <h3>Test Unauthorized Access</h3>
+                            <p>Attempt to access admin-only endpoint</p>
+                            <button class="btn btn-warning" onclick="testUnauthorized()">Test Access</button>
+                            <div id="unauth-result" class="result-box hidden"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Study/Subject Tests -->
+                <section class="test-section">
+                    <h2>📊 Data Operations</h2>
+                    <p class="section-desc">Test CRUD operations with audit trail generation.</p>
+                    
+                    <div class="test-grid">
+                        <div class="test-card">
+                            <h3>List Studies</h3>
+                            <button class="btn btn-primary" onclick="getStudies()">Get Studies</button>
+                            <div id="studies-result" class="result-box hidden"></div>
+                        </div>
+                        
+                        <div class="test-card">
+                            <h3>List Subjects</h3>
+                            <button class="btn btn-primary" onclick="getSubjects()">Get Subjects</button>
+                            <div id="subjects-result" class="result-box hidden"></div>
+                        </div>
+                        
+                        <div class="test-card">
+                            <h3>SOAP Status</h3>
+                            <p>Check LibreClinica SOAP services</p>
+                            <button class="btn btn-primary" onclick="getSoapStatus()">Check SOAP</button>
+                            <div id="soap-result" class="result-box hidden"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Session Timeout Test -->
+                <section class="test-section">
+                    <h2>⏱️ Session Timeout (§11.10(d))</h2>
+                    <p class="section-desc">System should terminate sessions after inactivity.</p>
+                    
+                    <div class="test-card">
+                        <h3>Session Information</h3>
+                        <div id="session-info" class="info-card"></div>
+                        <button class="btn btn-warning" onclick="testSessionTimeout()">Test Timeout Handling</button>
+                        <div id="session-result" class="result-box hidden"></div>
+                    </div>
+                </section>
+
+                <!-- Password Policy Tests -->
+                <section class="test-section">
+                    <h2>🔑 Password Policy (§11.300)</h2>
+                    <p class="section-desc">Verify password complexity and expiration requirements.</p>
+                    
+                    <div class="test-grid">
+                        <div class="test-card">
+                            <h3>Test Password Validation</h3>
+                            <input type="password" id="test-password" placeholder="Enter password to test">
+                            <button class="btn btn-primary" onclick="testPasswordPolicy()">Validate</button>
+                            <div id="password-result" class="result-box hidden"></div>
+                        </div>
+                        
+                        <div class="test-card">
+                            <h3>Change Password</h3>
+                            <input type="password" id="current-password" placeholder="Current password">
+                            <input type="password" id="new-password" placeholder="New password">
+                            <input type="password" id="confirm-password" placeholder="Confirm new password">
+                            <button class="btn btn-primary" onclick="changePassword()">Change</button>
+                            <div id="change-pwd-result" class="result-box hidden"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Test Log -->
+            <section class="test-section">
+                <h2>📝 Test Log</h2>
+                <div class="log-controls">
+                    <button class="btn btn-secondary" onclick="clearLog()">Clear Log</button>
+                    <button class="btn btn-secondary" onclick="exportLog()">Export Log</button>
+                </div>
+                <div id="test-log" class="test-log"></div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>21 CFR Part 11 Compliance Testing Suite | LibreClinica</p>
+            <p class="footer-note">For compliance validation purposes only</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

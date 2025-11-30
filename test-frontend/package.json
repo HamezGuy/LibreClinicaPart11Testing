@@ -1,0 +1,14 @@
+{
+  "name": "libreclinica-part11-test",
+  "version": "1.0.0",
+  "description": "21 CFR Part 11 Compliance Testing Frontend for LibreClinica",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'Static site - no build required'",
+    "start": "npx serve ."
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "keywords": ["libreclinica", "part11", "compliance", "testing"]
+}
+
