@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "name": "libreclinica-part11-test",
+  "buildCommand": null,
+  "outputDirectory": ".",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
