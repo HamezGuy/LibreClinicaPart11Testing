@@ -1,0 +1,14 @@
+# Large binary files - must be copied manually to server
+*.war
+
+# Docker volumes
+certbot/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
