@@ -1,216 +1,204 @@
 # LibreClinica Part 11 Compliance Testing
 
-## Overview
+> **⚠️ This is a SEPARATE, ISOLATED deployment for Part 11 testing only.**  
+> It does NOT connect to your production backend at `api.accuratrials.com`.
 
-This is an **isolated deployment** for testing 21 CFR Part 11 compliance on LibreClinica. It is completely separate from the main production system (ElectronicDataCaptureReal + LibreClinica API on Lightsail).
+## What This Is
 
-## Architecture
+A standalone LibreClinica deployment for testing 21 CFR Part 11 compliance features:
+- ✅ Audit trails
+- ✅ Electronic signatures  
+- ✅ User authentication & access control
+- ✅ Session timeout
+- ✅ Password policies
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│           PART 11 COMPLIANCE TESTING SETUP (ISOLATED)           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Test Frontend (Vercel)                                         │
-│  └─ libreclinica-part11-test.vercel.app                        │
-│                     │                                            │
-│                     ▼ HTTPS                                      │
-│                                                                  │
-│  AWS Lightsail (Separate Instance)                              │
-│  └─ part11-test.accuratrials.com                               │
-│      ├─ nginx (Reverse Proxy + SSL)                            │
-│      ├─ libreclinica-api (Node.js REST API)                    │
-│      ├─ libreclinica-core (Java/Tomcat)                        │
-│      └─ postgres (Database - SEPARATE from production)         │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+## Quick Start (5 minutes)
 
-PRODUCTION SETUP (UNCHANGED):
-┌─────────────────────────────────────────────────────────────────┐
-│  ElectronicDataCaptureReal (Vercel)                             │
-│  └─ edc-real.vercel.app                                        │
-│                     │                                            │
-│                     ▼ HTTPS                                      │
-│  AWS Lightsail (Production)                                     │
-│  └─ api.accuratrials.com                                       │
-│      ├─ nginx, api, core, postgres                             │
-└─────────────────────────────────────────────────────────────────┘
-```
+### Prerequisites
+- Ubuntu 22.04 server (AWS Lightsail 4GB RAM recommended - ~$20/month)
+- Ports 80 and 443 open
 
-## Deployment Steps
-
-### Step 1: Create New Lightsail Instance
-
-1. Log in to AWS Console → Lightsail
-2. Create a **new instance** (don't modify existing production!)
-3. Select: Ubuntu 22.04 LTS, 4GB RAM minimum
-4. Name it: `libreclinica-part11-testing`
-5. Create a static IP and attach it
-6. Open ports: 22 (SSH), 80 (HTTP), 443 (HTTPS)
-
-### Step 2: Set Up DNS
-
-Add an A record for your testing domain:
-```
-Type: A
-Name: part11-test (or your chosen subdomain)
-Value: <your-new-lightsail-static-ip>
-TTL: 300
-```
-
-### Step 3: SSH Into Server and Install Docker
+### One-Command Setup
 
 ```bash
-ssh ubuntu@<your-static-ip>
+# Clone and run setup
+git clone https://github.com/HamezGuy/LibreClinicaPart11Testing.git
+cd LibreClinicaPart11Testing
+bash setup.sh
+```
 
-# Install Docker
+### Manual Setup
+
+```bash
+# 1. Clone repository
+git clone https://github.com/HamezGuy/LibreClinicaPart11Testing.git
+cd LibreClinicaPart11Testing
+
+# 2. Install Docker (if not installed)
 curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker ubuntu
-exit
-# SSH back in for group changes to take effect
-ssh ubuntu@<your-static-ip>
+sudo usermod -aG docker $USER
+# Log out and back in, then:
+sudo apt-get update && sudo apt-get install -y docker-compose-plugin
 
-# Install Docker Compose plugin
-sudo apt-get update
-sudo apt-get install docker-compose-plugin
-```
-
-### Step 4: Upload Configuration
-
-From your local machine:
-```bash
-# Copy the entire part11 testing folder
-scp -r libreclinica-part11-testing ubuntu@<your-static-ip>:~/
-```
-
-Or manually create files on the server.
-
-### Step 5: Configure Environment
-
-```bash
-cd libreclinica-part11-testing
-
-# Create .env file
+# 3. Configure environment
 cp ENV_TEMPLATE.txt .env
-nano .env  # Edit with your values
+nano .env  # Edit settings
+
+# 4. Start LibreClinica
+docker compose up -d
+
+# 5. Wait 2-3 minutes for startup, then access:
+# http://YOUR_SERVER_IP/LibreClinica/
 ```
 
-Update `nginx.conf`:
-```bash
-# Replace YOUR_DOMAIN with your actual domain
-sed -i 's/YOUR_DOMAIN/part11-test.accuratrials.com/g' nginx.conf
-sed -i 's/YOUR_DOMAIN/part11-test.accuratrials.com/g' nginx-init.conf
+## Access LibreClinica
+
+Once started, go to:
+```
+http://YOUR_SERVER_IP/LibreClinica/
 ```
 
-### Step 6: Start Services (HTTP First)
+**Default Login:**
+- Username: `root`
+- Password: `12345678`
+
+## SSL Setup (Optional but Recommended)
+
+For HTTPS with a custom domain:
 
 ```bash
-# Use HTTP-only config first (for SSL setup)
-cp nginx-init.conf nginx.conf
+# 1. Point your domain to your server IP (DNS A record)
 
-# Build and start
-docker compose up -d --build
+# 2. Update nginx-ssl.conf with your domain
+sed -i 's/YOUR_DOMAIN/part11.yourdomain.com/g' nginx-ssl.conf
 
-# Check status
-docker compose ps
-docker compose logs -f
-```
-
-### Step 7: Get SSL Certificate
-
-```bash
-# Get SSL certificate
+# 3. Get SSL certificate
 docker compose run --rm certbot certonly \
   --webroot \
   --webroot-path /var/www/certbot \
-  -d part11-test.accuratrials.com \
-  --email admin@accuratrials.com \
+  -d part11.yourdomain.com \
+  --email your-email@example.com \
   --agree-tos \
   --no-eff-email
 
-# Now switch to full nginx config
-# Edit nginx.conf and uncomment the ssl_certificate lines
+# 4. Switch to SSL config
+cp nginx-ssl.conf nginx.conf
+docker compose restart nginx
 
-# Restart nginx
+# 5. Access via HTTPS
+# https://part11.yourdomain.com/LibreClinica/
+```
+
+## Container Overview
+
+| Container | Purpose | Port |
+|-----------|---------|------|
+| `lc_part11_db` | PostgreSQL database | 5432 (internal) |
+| `lc_part11_core` | LibreClinica (Java/Tomcat) | 8080 (internal) |
+| `lc_part11_nginx` | Reverse proxy | 80, 443 |
+
+## Useful Commands
+
+```bash
+# View all container status
+docker compose ps
+
+# View LibreClinica logs (useful for troubleshooting)
+docker compose logs -f libreclinica
+
+# Stop everything
+docker compose down
+
+# Stop and remove all data (fresh start)
+docker compose down -v
+
+# Restart LibreClinica
+docker compose restart libreclinica
+
+# Restart nginx (after config changes)
 docker compose restart nginx
 ```
 
-### Step 8: Deploy Test Frontend to Vercel
+## Part 11 Testing Guide
 
+### 1. Audit Trail Testing (§11.10(e))
+- Create a study, add a subject, modify data
+- Go to **Admin → Audit Logs** to verify all actions are logged
+- Verify timestamps, user IDs, and before/after values
+
+### 2. Electronic Signatures (§11.50, §11.70)
+- Configure signature requirements in study settings
+- Sign off on data entry
+- Verify signature includes name, date/time, and meaning
+
+### 3. Access Control (§11.10(d))
+- Create users with different roles
+- Verify role-based access restrictions
+- Test that unauthorized users cannot access restricted areas
+
+### 4. Session Timeout
+- Leave session idle
+- Verify automatic logout after timeout period
+
+### 5. Password Policy (§11.300)
+- Try creating users with weak passwords
+- Verify password complexity requirements are enforced
+
+## Isolation from Production
+
+This deployment is **completely separate** from your production system:
+
+| Aspect | Production | Part 11 Testing |
+|--------|------------|-----------------|
+| API Domain | `api.accuratrials.com` | Your test server IP |
+| Database | `libreclinica` | `libreclinica_part11` |
+| Docker Network | `lc_network` | `libreclinica_part11_network` |
+| Container Names | `libreclinica_*` | `lc_part11_*` |
+| Data Volumes | `libreclinica_*` | `libreclinica_part11_*` |
+
+## Troubleshooting
+
+### LibreClinica won't start
 ```bash
-cd test-frontend
+# Check logs
+docker compose logs libreclinica
 
-# Install Vercel CLI if needed
-npm install -g vercel
-
-# Deploy
-vercel login
-vercel --prod
-
-# Set project name as: libreclinica-part11-test
+# Common fix: wait longer (first start takes 3-5 minutes)
+# LibreClinica needs to initialize the database
 ```
 
-Or connect to GitHub and deploy via Vercel Dashboard.
-
-### Step 9: Update Frontend API URL
-
-After deployment, open the test frontend and:
-1. Set API URL to: `https://part11-test.accuratrials.com`
-2. Click "Test Connection"
-3. Login with LibreClinica credentials
-
-## Part 11 Compliance Tests
-
-The test frontend includes tests for:
-
-| Requirement | Test |
-|-------------|------|
-| **§11.10(d)** Access Control | Login/Logout, Unauthorized Access Test |
-| **§11.10(e)** Audit Trail | View Logs, Create Entries |
-| **§11.50** Electronic Signatures | Sign Data with Re-authentication |
-| **§11.70** Signature Linking | Verify Signatures |
-| **§11.300** Password Controls | Policy Validation, Password Change |
-| **Session Timeout** | 30-minute auto-logout |
-
-## Test Log Export
-
-All test actions are logged. Use the "Export Log" button to generate a timestamped report for compliance documentation.
-
-## Cleanup
-
-To remove the testing deployment:
-
+### Can't connect to database
 ```bash
-# On Lightsail server
-cd libreclinica-part11-testing
-docker compose down -v
+# Check postgres is running
+docker compose ps postgres
 
-# This removes containers AND volumes (data)
+# Check postgres logs
+docker compose logs postgres
 ```
 
-Then terminate the Lightsail instance from AWS Console.
-
-## Important Notes
-
-⚠️ **This is a TEST environment** - Do not use for real clinical data
-⚠️ **Separate from Production** - Uses different database and domain
-⚠️ **SSL Required** - Part 11 requires encrypted transmission
-⚠️ **Audit Logs** - All actions are logged for compliance verification
-
-## File Structure
-
-```
-libreclinica-part11-testing/
-├── docker-compose.yml      # Docker services configuration
-├── nginx.conf              # Full nginx config (with SSL)
-├── nginx-init.conf         # Initial nginx config (HTTP only)
-├── ENV_TEMPLATE.txt        # Environment variable template
-├── README.md               # This file
-└── test-frontend/          # Vercel-deployable test UI
-    ├── index.html          # Main HTML
-    ├── styles.css          # Styling
-    ├── app.js              # Application logic
-    ├── package.json        # NPM config
-    └── vercel.json         # Vercel deployment config
+### 502 Bad Gateway
+```bash
+# LibreClinica is still starting up
+# Wait 2-3 minutes and try again
+docker compose logs -f libreclinica
+# Look for "Server startup" message
 ```
 
+## Files
+
+```
+LibreClinicaPart11Testing/
+├── docker-compose.yml   # Main Docker configuration
+├── nginx.conf           # HTTP nginx config (default)
+├── nginx-ssl.conf       # HTTPS nginx config (use after SSL setup)
+├── nginx-init.conf      # Initial nginx config (legacy)
+├── setup.sh             # Quick setup script
+├── ENV_TEMPLATE.txt     # Environment variables template
+├── README.md            # This file
+└── test-frontend/       # Optional: API testing UI on Vercel
+```
+
+## Support
+
+- LibreClinica Documentation: https://libreclinica.org/documentation
+- GitHub Issues: https://github.com/HamezGuy/LibreClinicaPart11Testing/issues

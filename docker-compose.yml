@@ -1,15 +1,20 @@
 # ================================================================
 # LibreClinica Part 11 Compliance Testing - Docker Compose
 # ================================================================
-# ISOLATED deployment for 21 CFR Part 11 compliance testing only
-# Separate from main production (ElectronicDataCaptureReal) setup
+# COMPLETELY ISOLATED deployment for 21 CFR Part 11 testing
+# This is SEPARATE from the production backend on api.accuratrials.com
+# 
+# Container naming: lc_part11_* (different from production lc_*)
+# Network: part11_network (isolated from production lc_network)
+# Database: libreclinica_part11 (separate from production libreclinica)
+# Volumes: part11_* (separate from production volumes)
 # ================================================================
 
 version: '3.8'
 
 services:
   # ==========================================
-  # 1. Database (PostgreSQL)
+  # 1. Database (PostgreSQL) - ISOLATED
   # ==========================================
   postgres:
     image: postgres:14-alpine
@@ -18,7 +23,7 @@ services:
     environment:
       POSTGRES_DB: libreclinica_part11
       POSTGRES_USER: libreclinica
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-libreclinica_test}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-LibreClinicaPart11Test!}
     volumes:
       - part11_db_data:/var/lib/postgresql/data
     networks:
@@ -31,8 +36,9 @@ services:
 
   # ==========================================
   # 2. LibreClinica Core (Java/Tomcat)
+  # This is the ACTUAL LibreClinica application
   # ==========================================
-  core:
+  libreclinica:
     image: jaspersnel/libreclinica:latest
     container_name: lc_part11_core
     restart: always
@@ -40,14 +46,24 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      # Database connection
       dbType: postgres
       dbHost: postgres
       dbPort: 5432
       dbName: libreclinica_part11
       dbUser: libreclinica
-      dbPass: ${DB_PASSWORD:-libreclinica_test}
-      sysURL: https://${DOMAIN:-part11-test.accuratrials.com}/LibreClinica
-      supportURL: https://www.accuratrials.com
+      dbPass: ${DB_PASSWORD:-LibreClinicaPart11Test!}
+      # System URLs
+      sysURL: ${LIBRECLINICA_URL:-http://localhost}/LibreClinica
+      supportURL: https://www.libreclinica.org
+      # Mail settings (optional - for testing)
+      mailHost: ${MAIL_HOST:-localhost}
+      mailPort: ${MAIL_PORT:-25}
+      mailProtocol: ${MAIL_PROTOCOL:-smtp}
+      mailUsername: ${MAIL_USERNAME:-}
+      mailPassword: ${MAIL_PASSWORD:-}
+      mailSmtpAuth: ${MAIL_SMTP_AUTH:-false}
+      mailSmtpStarttls: ${MAIL_SMTP_STARTTLS:-false}
     volumes:
       - part11_core_data:/usr/local/tomcat/libreclinica.data
     networks:
@@ -57,70 +73,29 @@ services:
       interval: 30s
       timeout: 10s
       retries: 30
-      start_period: 120s
+      start_period: 180s
 
   # ==========================================
-  # 3. LibreClinica API (Node.js)
-  # ==========================================
-  api:
-    build:
-      context: ../libreclinica-api
-      dockerfile: Dockerfile
-    image: libreclinica-part11-api:latest
-    container_name: lc_part11_api
-    restart: always
-    depends_on:
-      - postgres
-      - core
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      # Database Connection (same as core)
-      LIBRECLINICA_DB_HOST: postgres
-      LIBRECLINICA_DB_PORT: 5432
-      LIBRECLINICA_DB_NAME: libreclinica_part11
-      LIBRECLINICA_DB_USER: libreclinica
-      LIBRECLINICA_DB_PASSWORD: ${DB_PASSWORD:-libreclinica_test}
-      # Core SOAP Connection
-      LIBRECLINICA_SOAP_URL: http://core:8080/LibreClinica/ws
-      SOAP_USERNAME: root
-      SOAP_PASSWORD: ${SOAP_PASSWORD:-25d55ad283aa400af464c76d713c07ad}
-      # Security
-      JWT_SECRET: ${JWT_SECRET:-part11-testing-jwt-secret-change-in-production}
-      # CORS - Allow Part 11 test frontend on Vercel
-      ALLOWED_ORIGINS: https://${FRONTEND_DOMAIN:-libreclinica-part11-test.vercel.app},https://*.vercel.app,http://localhost:4200,http://localhost:3000,http://localhost:5173
-      # 21 CFR Part 11 Compliance Settings
-      PASSWORD_EXPIRY_DAYS: 90
-      PASSWORD_MIN_LENGTH: 12
-      MAX_LOGIN_ATTEMPTS: 5
-      ACCOUNT_LOCKOUT_DURATION_MINUTES: 30
-      SESSION_TIMEOUT_MINUTES: 30
-      AUDIT_LOG_RETENTION_DAYS: 2555
-    networks:
-      - part11_network
-
-  # ==========================================
-  # 4. Nginx (Reverse Proxy & SSL)
+  # 3. Nginx (Reverse Proxy)
   # ==========================================
   nginx:
     image: nginx:alpine
     container_name: lc_part11_nginx
     restart: always
     ports:
-      - "0.0.0.0:80:80"
-      - "0.0.0.0:443:443"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
     depends_on:
-      - api
-      - core
+      - libreclinica
     networks:
       - part11_network
 
   # ==========================================
-  # 5. Certbot (SSL Certificate Management)
+  # 4. Certbot (SSL - Optional)
   # ==========================================
   certbot:
     image: certbot/certbot
@@ -129,12 +104,22 @@ services:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    profiles:
+      - ssl
 
+# ==========================================
+# ISOLATED Volumes (separate from production)
+# ==========================================
 volumes:
   part11_db_data:
+    name: libreclinica_part11_db_data
   part11_core_data:
+    name: libreclinica_part11_core_data
 
+# ==========================================
+# ISOLATED Network (separate from production)
+# ==========================================
 networks:
   part11_network:
+    name: libreclinica_part11_network
     driver: bridge
-
