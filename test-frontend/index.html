@@ -148,29 +148,51 @@
                     </div>
                 </section>
 
-                <!-- Study/Subject Tests -->
+                <!-- SOAP API Tests -->
                 <section class="test-section">
-                    <h2>📊 Data Operations</h2>
-                    <p class="section-desc">Test CRUD operations with audit trail generation.</p>
+                    <h2>🔌 SOAP Web Services</h2>
+                    <p class="section-desc">Test LibreClinica SOAP endpoints directly. These use WS-Security with MD5 password hash.</p>
                     
                     <div class="test-grid">
                         <div class="test-card">
-                            <h3>List Studies</h3>
+                            <h3>Study Service</h3>
+                            <p>List all studies via SOAP</p>
+                            <button class="btn btn-primary" onclick="testSoapStudyList()">Get Studies (SOAP)</button>
+                            <div id="soap-result" class="result-box hidden"></div>
+                        </div>
+                        
+                        <div class="test-card">
+                            <h3>StudySubject Service</h3>
+                            <p>List subjects in default study</p>
+                            <button class="btn btn-primary" onclick="testSoapSubjects()">Get Subjects (SOAP)</button>
+                            <div id="soap-subjects-result" class="result-box hidden"></div>
+                        </div>
+                        
+                        <div class="test-card">
+                            <h3>SOAP Auth Test</h3>
+                            <p>Test that SOAP rejects unauthenticated requests (§11.10(d))</p>
+                            <button class="btn btn-warning" onclick="testSoapNoAuth()">Test No Auth</button>
+                            <div id="soap-noauth-result" class="result-box hidden"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- REST API Tests -->
+                <section class="test-section">
+                    <h2>📊 REST API Operations</h2>
+                    <p class="section-desc">Test REST API endpoints (requires API layer).</p>
+                    
+                    <div class="test-grid">
+                        <div class="test-card">
+                            <h3>List Studies (REST)</h3>
                             <button class="btn btn-primary" onclick="getStudies()">Get Studies</button>
                             <div id="studies-result" class="result-box hidden"></div>
                         </div>
                         
                         <div class="test-card">
-                            <h3>List Subjects</h3>
+                            <h3>List Subjects (REST)</h3>
                             <button class="btn btn-primary" onclick="getSubjects()">Get Subjects</button>
                             <div id="subjects-result" class="result-box hidden"></div>
-                        </div>
-                        
-                        <div class="test-card">
-                            <h3>SOAP Status</h3>
-                            <p>Check LibreClinica SOAP services</p>
-                            <button class="btn btn-primary" onclick="getSoapStatus()">Check SOAP</button>
-                            <div id="soap-result" class="result-box hidden"></div>
                         </div>
                     </div>
                 </section>

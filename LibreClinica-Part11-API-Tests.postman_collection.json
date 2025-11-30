@@ -1,0 +1,202 @@
+{
+  "info": {
+    "name": "LibreClinica Part 11 API Tests",
+    "description": "Complete API and SOAP endpoint testing for 21 CFR Part 11 compliance validation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://18.116.37.156",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "root",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "12345678",
+      "type": "string"
+    },
+    {
+      "key": "passwordMD5",
+      "value": "25d55ad283aa400af464c76d713c07ad",
+      "type": "string",
+      "description": "MD5 hash of password for SOAP WS-Security"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Checks",
+      "item": [
+        {
+          "name": "Server Health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        },
+        {
+          "name": "LibreClinica Login Page",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/LibreClinica/pages/login/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SOAP - Study Service",
+      "description": "LibreClinica SOAP Web Services for Study operations",
+      "item": [
+        {
+          "name": "Get Study List (SOAP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "text/xml;charset=UTF-8"},
+              {"key": "SOAPAction", "value": "\"\""}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:v1=\"http://openclinica.org/ws/study/v1\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\">\n  <soapenv:Header>\n    <wsse:Security>\n      <wsse:UsernameToken>\n        <wsse:Username>{{username}}</wsse:Username>\n        <wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">{{passwordMD5}}</wsse:Password>\n      </wsse:UsernameToken>\n    </wsse:Security>\n  </soapenv:Header>\n  <soapenv:Body>\n    <v1:listAllRequest/>\n  </soapenv:Body>\n</soapenv:Envelope>"
+            },
+            "url": "{{baseUrl}}/LibreClinica/ws/study/v1"
+          }
+        },
+        {
+          "name": "Get Study Metadata (SOAP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "text/xml;charset=UTF-8"},
+              {"key": "SOAPAction", "value": "\"\""}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:v1=\"http://openclinica.org/ws/study/v1\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n  <soapenv:Header>\n    <wsse:Security>\n      <wsse:UsernameToken>\n        <wsse:Username>{{username}}</wsse:Username>\n        <wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">{{passwordMD5}}</wsse:Password>\n      </wsse:UsernameToken>\n    </wsse:Security>\n  </soapenv:Header>\n  <soapenv:Body>\n    <v1:getMetadataRequest>\n      <v1:studyMetadata>\n        <bean:identifier xmlns:bean=\"http://openclinica.org/ws/beans\">S_DEFAULTS1</bean:identifier>\n      </v1:studyMetadata>\n    </v1:getMetadataRequest>\n  </soapenv:Body>\n</soapenv:Envelope>"
+            },
+            "url": "{{baseUrl}}/LibreClinica/ws/study/v1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SOAP - StudySubject Service",
+      "description": "Subject/Participant management SOAP endpoints",
+      "item": [
+        {
+          "name": "List Study Subjects (SOAP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "text/xml;charset=UTF-8"},
+              {"key": "SOAPAction", "value": "\"\""}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:v1=\"http://openclinica.org/ws/studySubject/v1\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n  <soapenv:Header>\n    <wsse:Security>\n      <wsse:UsernameToken>\n        <wsse:Username>{{username}}</wsse:Username>\n        <wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">{{passwordMD5}}</wsse:Password>\n      </wsse:UsernameToken>\n    </wsse:Security>\n  </soapenv:Header>\n  <soapenv:Body>\n    <v1:listAllByStudyRequest>\n      <v1:studyRef>\n        <bean:identifier xmlns:bean=\"http://openclinica.org/ws/beans\">S_DEFAULTS1</bean:identifier>\n      </v1:studyRef>\n    </v1:listAllByStudyRequest>\n  </soapenv:Body>\n</soapenv:Envelope>"
+            },
+            "url": "{{baseUrl}}/LibreClinica/ws/studySubject/v1"
+          }
+        },
+        {
+          "name": "Check Subject Exists (SOAP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "text/xml;charset=UTF-8"},
+              {"key": "SOAPAction", "value": "\"\""}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:v1=\"http://openclinica.org/ws/studySubject/v1\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n  <soapenv:Header>\n    <wsse:Security>\n      <wsse:UsernameToken>\n        <wsse:Username>{{username}}</wsse:Username>\n        <wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">{{passwordMD5}}</wsse:Password>\n      </wsse:UsernameToken>\n    </wsse:Security>\n  </soapenv:Header>\n  <soapenv:Body>\n    <v1:isStudySubjectRequest>\n      <v1:studySubject>\n        <bean:label xmlns:bean=\"http://openclinica.org/ws/beans\">SS_TEST001</bean:label>\n        <bean:studyRef xmlns:bean=\"http://openclinica.org/ws/beans\">\n          <bean:identifier>S_DEFAULTS1</bean:identifier>\n        </bean:studyRef>\n      </v1:studySubject>\n    </v1:isStudySubjectRequest>\n  </soapenv:Body>\n</soapenv:Envelope>"
+            },
+            "url": "{{baseUrl}}/LibreClinica/ws/studySubject/v1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SOAP - Event Service",
+      "description": "Study Event scheduling SOAP endpoints",
+      "item": [
+        {
+          "name": "Schedule Event (SOAP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "text/xml;charset=UTF-8"},
+              {"key": "SOAPAction", "value": "\"\""}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:v1=\"http://openclinica.org/ws/event/v1\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n  <soapenv:Header>\n    <wsse:Security>\n      <wsse:UsernameToken>\n        <wsse:Username>{{username}}</wsse:Username>\n        <wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">{{passwordMD5}}</wsse:Password>\n      </wsse:UsernameToken>\n    </wsse:Security>\n  </soapenv:Header>\n  <soapenv:Body>\n    <v1:scheduleRequest>\n      <v1:event>\n        <bean:studySubjectRef xmlns:bean=\"http://openclinica.org/ws/beans\">\n          <bean:label>SS_TEST001</bean:label>\n        </bean:studySubjectRef>\n        <bean:studyRef xmlns:bean=\"http://openclinica.org/ws/beans\">\n          <bean:identifier>S_DEFAULTS1</bean:identifier>\n        </bean:studyRef>\n        <bean:eventDefinitionOID xmlns:bean=\"http://openclinica.org/ws/beans\">SE_VISIT1</bean:eventDefinitionOID>\n        <bean:startDate xmlns:bean=\"http://openclinica.org/ws/beans\">2025-01-01</bean:startDate>\n      </v1:event>\n    </v1:scheduleRequest>\n  </soapenv:Body>\n</soapenv:Envelope>"
+            },
+            "url": "{{baseUrl}}/LibreClinica/ws/event/v1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SOAP - Data Service",
+      "description": "Clinical Data import/export SOAP endpoints",
+      "item": [
+        {
+          "name": "Import ODM Data (SOAP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "text/xml;charset=UTF-8"},
+              {"key": "SOAPAction", "value": "\"\""}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:v1=\"http://openclinica.org/ws/data/v1\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n  <soapenv:Header>\n    <wsse:Security>\n      <wsse:UsernameToken>\n        <wsse:Username>{{username}}</wsse:Username>\n        <wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">{{passwordMD5}}</wsse:Password>\n      </wsse:UsernameToken>\n    </wsse:Security>\n  </soapenv:Header>\n  <soapenv:Body>\n    <v1:importRequest>\n      <ODM xmlns=\"http://www.cdisc.org/ns/odm/v1.3\" FileType=\"Snapshot\" FileOID=\"test-import\">\n        <!-- ODM clinical data here -->\n      </ODM>\n    </v1:importRequest>\n  </soapenv:Body>\n</soapenv:Envelope>"
+            },
+            "url": "{{baseUrl}}/LibreClinica/ws/data/v1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Part 11 Compliance Tests",
+      "description": "Specific tests for 21 CFR Part 11 requirements",
+      "item": [
+        {
+          "name": "Test Invalid Auth (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "text/xml;charset=UTF-8"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:v1=\"http://openclinica.org/ws/study/v1\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n  <soapenv:Header>\n    <wsse:Security>\n      <wsse:UsernameToken>\n        <wsse:Username>wronguser</wsse:Username>\n        <wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">wrongpassword</wsse:Password>\n      </wsse:UsernameToken>\n    </wsse:Security>\n  </soapenv:Header>\n  <soapenv:Body>\n    <v1:listAllRequest/>\n  </soapenv:Body>\n</soapenv:Envelope>"
+            },
+            "url": "{{baseUrl}}/LibreClinica/ws/study/v1",
+            "description": "§11.10(d) - Should reject invalid credentials"
+          }
+        },
+        {
+          "name": "Test No Auth (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "text/xml;charset=UTF-8"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:v1=\"http://openclinica.org/ws/study/v1\">\n  <soapenv:Header></soapenv:Header>\n  <soapenv:Body>\n    <v1:listAllRequest/>\n  </soapenv:Body>\n</soapenv:Envelope>"
+            },
+            "url": "{{baseUrl}}/LibreClinica/ws/study/v1",
+            "description": "§11.10(d) - Should reject unauthenticated requests"
+          }
+        }
+      ]
+    }
+  ]
+}
+

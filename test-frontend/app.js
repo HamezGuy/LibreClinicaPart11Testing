@@ -8,7 +8,8 @@
 // CONFIGURATION
 // ================================================================
 
-let API_URL = 'https://api.accuratrials.com';
+// Auto-detect API URL (same server as this page)
+let API_URL = window.location.origin;
 let accessToken = null;
 let refreshToken = null;
 let currentUser = null;
@@ -431,6 +432,130 @@ async function getSoapStatus() {
     } else {
         showResult('soap-result', `Failed: ${result.data.message || result.error}`, false);
         log(`Failed to get SOAP status: ${result.data.message || result.error}`, 'error');
+    }
+}
+
+// ================================================================
+// SOAP TESTS
+// ================================================================
+
+async function testSoapStudyList() {
+    log('Testing SOAP Study Service...');
+    
+    const username = document.getElementById('username').value || 'root';
+    const passwordMD5 = '25d55ad283aa400af464c76d713c07ad'; // MD5 of "12345678"
+    
+    const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:v1="http://openclinica.org/ws/study/v1" 
+                  xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+  <soapenv:Header>
+    <wsse:Security>
+      <wsse:UsernameToken>
+        <wsse:Username>${username}</wsse:Username>
+        <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">${passwordMD5}</wsse:Password>
+      </wsse:UsernameToken>
+    </wsse:Security>
+  </soapenv:Header>
+  <soapenv:Body>
+    <v1:listAllRequest/>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+
+    try {
+        const response = await fetch(`${API_URL}/LibreClinica/ws/study/v1`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/xml;charset=UTF-8',
+                'SOAPAction': '""'
+            },
+            body: soapEnvelope
+        });
+        
+        const text = await response.text();
+        showResult('soap-result', text, response.ok);
+        log(`SOAP Study List: ${response.ok ? 'Success' : 'Failed'} (${response.status})`, response.ok ? 'success' : 'error');
+    } catch (error) {
+        showResult('soap-result', `Error: ${error.message}`, false);
+        log(`SOAP test failed: ${error.message}`, 'error');
+    }
+}
+
+async function testSoapSubjects() {
+    log('Testing SOAP StudySubject Service...');
+    
+    const username = document.getElementById('username').value || 'root';
+    const passwordMD5 = '25d55ad283aa400af464c76d713c07ad';
+    
+    const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:v1="http://openclinica.org/ws/studySubject/v1" 
+                  xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+                  xmlns:bean="http://openclinica.org/ws/beans">
+  <soapenv:Header>
+    <wsse:Security>
+      <wsse:UsernameToken>
+        <wsse:Username>${username}</wsse:Username>
+        <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">${passwordMD5}</wsse:Password>
+      </wsse:UsernameToken>
+    </wsse:Security>
+  </soapenv:Header>
+  <soapenv:Body>
+    <v1:listAllByStudyRequest>
+      <v1:studyRef>
+        <bean:identifier>S_DEFAULTS1</bean:identifier>
+      </v1:studyRef>
+    </v1:listAllByStudyRequest>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+
+    try {
+        const response = await fetch(`${API_URL}/LibreClinica/ws/studySubject/v1`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/xml;charset=UTF-8',
+                'SOAPAction': '""'
+            },
+            body: soapEnvelope
+        });
+        
+        const text = await response.text();
+        showResult('soap-subjects-result', text, response.ok);
+        log(`SOAP StudySubject: ${response.ok ? 'Success' : 'Failed'} (${response.status})`, response.ok ? 'success' : 'error');
+    } catch (error) {
+        showResult('soap-subjects-result', `Error: ${error.message}`, false);
+        log(`SOAP test failed: ${error.message}`, 'error');
+    }
+}
+
+async function testSoapNoAuth() {
+    log('Testing SOAP without authentication (should fail)...');
+    
+    const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:v1="http://openclinica.org/ws/study/v1">
+  <soapenv:Header></soapenv:Header>
+  <soapenv:Body>
+    <v1:listAllRequest/>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+
+    try {
+        const response = await fetch(`${API_URL}/LibreClinica/ws/study/v1`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/xml;charset=UTF-8'
+            },
+            body: soapEnvelope
+        });
+        
+        const text = await response.text();
+        const passed = !response.ok || text.includes('Fault') || text.includes('error');
+        showResult('soap-noauth-result', `Status: ${response.status}\n\n${text}`, passed);
+        log(`SOAP No-Auth Test: ${passed ? 'Correctly rejected' : 'WARNING - should have failed!'}`, passed ? 'success' : 'error');
+    } catch (error) {
+        showResult('soap-noauth-result', `Correctly failed: ${error.message}`, true);
+        log('SOAP No-Auth: Correctly rejected', 'success');
     }
 }
 

@@ -95,7 +95,20 @@ services:
       - part11_network
 
   # ==========================================
-  # 4. Certbot (SSL - Optional)
+  # 4. API Test UI (Web-based API/SOAP Tester)
+  # Access at: http://YOUR_IP/tester/
+  # ==========================================
+  tester:
+    image: nginx:alpine
+    container_name: lc_part11_tester
+    restart: always
+    volumes:
+      - ./test-frontend:/usr/share/nginx/html:ro
+    networks:
+      - part11_network
+
+  # ==========================================
+  # 5. Certbot (SSL - Optional)
   # ==========================================
   certbot:
     image: certbot/certbot
