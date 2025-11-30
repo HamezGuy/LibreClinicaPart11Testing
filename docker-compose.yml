@@ -1,7 +1,8 @@
 # ================================================================
 # LibreClinica Part 11 Compliance Testing - Docker Compose
 # ================================================================
-# COMPLETELY ISOLATED deployment for 21 CFR Part 11 testing
+# ISOLATED deployment - separate from production
+# Uses same config pattern as working production setup
 # ================================================================
 
 services:
@@ -14,20 +15,21 @@ services:
     restart: always
     environment:
       POSTGRES_DB: libreclinica
-      POSTGRES_USER: clinica
-      POSTGRES_PASSWORD: clinica
+      POSTGRES_USER: libreclinica
+      POSTGRES_PASSWORD: libreclinica
     volumes:
       - part11_db_data:/var/lib/postgresql/data
     networks:
       - part11_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U clinica -d libreclinica"]
+      test: ["CMD-SHELL", "pg_isready -U libreclinica -d libreclinica"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   # ==========================================
   # 2. LibreClinica Core (Java/Tomcat)
+  # Web UI Login: root / 12345678
   # ==========================================
   libreclinica:
     image: jaspersnel/libreclinica:latest
@@ -37,13 +39,16 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DB_TYPE: postgres
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: libreclinica
-      DB_USER: clinica
-      DB_PASS: clinica
-      DB_CONNECTION_URL: jdbc:postgresql://postgres:5432/libreclinica
+      # Database connection - lowercase camelCase (required by this image)
+      dbType: postgres
+      dbHost: postgres
+      dbPort: 5432
+      dbName: libreclinica
+      dbUser: libreclinica
+      dbPass: libreclinica
+      # System URLs
+      sysURL: http://localhost/LibreClinica
+      supportURL: https://www.libreclinica.org
     volumes:
       - part11_core_data:/usr/local/tomcat/libreclinica.data
     networks:
